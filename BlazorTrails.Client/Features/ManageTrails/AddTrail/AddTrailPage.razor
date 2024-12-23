@@ -1,6 +1,8 @@
 ﻿@page "/add-trail" 
 @inject IMediator Mediator
-@    using BlazorTrails.Shared.Features.ManageTrails
+@using BlazorTrails.Shared.Features.ManageTrails
+@using BlazorTrails.Shared.Features.ManageTrails.AddTrail
+@using BlazorTrails.Shared.Features.ManageTrails.Shared
 
 <PageTitle>Add Trail - Blazing Trails</PageTitle>
 
@@ -20,7 +22,6 @@
 else if (_errorMessage is not null)
 {
     <ErrorAlert Message="@_errorMessage" />
-}
 }
 
 <TrailForm @ref="_trailForm" OnSubmit="SubmitNewTrail" />

@@ -17,7 +17,7 @@ public class GetTrailHandler : IRequestHandler<GetTrailRequest, GetTrailRequest.
     {
         try
         {
-            return await _httpClient.GetFromJsonAsync<GetTrailRequest.Response>(GetTrailRequest.RouteTemplate.Replace("trailId", request.TrailId.ToString()));
+            return await _httpClient.GetFromJsonAsync<GetTrailRequest.Response>(GetTrailRequest.RouteTemplate.Replace("{trailId}", request.TrailId.ToString()));
         }
         catch (HttpRequestException)
         {

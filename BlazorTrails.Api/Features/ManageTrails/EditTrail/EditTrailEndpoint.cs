@@ -2,6 +2,7 @@
 using BlazorTrails.Api.Persistence;
 using BlazorTrails.Api.Persistence.Entities;
 using BlazorTrails.Shared.Features.ManageTrails.EditTrail;
+using BlazorTrails.Shared.Features.ManageTrails.Shared;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -9,48 +10,42 @@ namespace BlazorTrails.Api.Features.ManageTrails.EditTrail;
 
 public class EditTrailEndpoint : EndpointBaseAsync.WithRequest<EditTrailRequest>.WithActionResult<bool>
 {
-    private readonly BlazingTrailsContext _context;
+    private readonly BlazingTrailsContext _database;
 
-    public EditTrailEndpoint(BlazingTrailsContext context)
+    public EditTrailEndpoint(BlazingTrailsContext database)
     {
-        _context = context;
+        _database = database;
     }
 
     [HttpPut(EditTrailRequest.RouteTemplate)]
     public override async Task<ActionResult<bool>> HandleAsync(EditTrailRequest request, CancellationToken cancellationToken = default)
     {
-        var trail = await _context.Trails
-           .Include(t => t.Route)
-           .FirstOrDefaultAsync(t => t.Id == request.Trail.Id, cancellationToken);
+        var trail = await _database.Trails.Include(x => x.Waypoints).SingleOrDefaultAsync(x => x.Id == request.Trail.Id, cancellationToken: cancellationToken);
 
         if (trail is null)
         {
             return BadRequest("Trail could not be found.");
         }
 
-        trail.Id = request.Trail.Id;
         trail.Name = request.Trail.Name;
+        trail.Description = request.Trail.Description;
         trail.Location = request.Trail.Location;
-        trail.Image = request.Trail.Image;
         trail.TimeInMinutes = request.Trail.TimeInMinutes;
         trail.Length = request.Trail.Length;
-        trail.Description = request.Trail.Description;
-        trail.Route = request.Trail.Route.Select(ri => new RouteInstruction
+        trail.Waypoints = request.Trail.Waypoints.Select(wp => new Waypoint
         {
-            Stage = ri.Stage, 
-            Description = ri.Description,
-            Trail = trail
+            Latitude = wp.Latitude,
+            Longitude = wp.Longitude
         }).ToList();
 
-       if(request.Trail.ImageAct == BlazorTrails.Shared.Features.ManageTrails.Shared.TrailDto.ImageAction.Remove)
+        if (request.Trail.ImageAction == ImageAction.Remove)
         {
             System.IO.File.Delete(Path.Combine(Directory.GetCurrentDirectory(), "Images", trail.Image!));
-            trail.Image = null;
+            trail.Image = "";
         }
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _database.SaveChangesAsync(cancellationToken);
 
         return Ok(true);
     }
-}
 }

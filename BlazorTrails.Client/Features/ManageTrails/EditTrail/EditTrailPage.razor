@@ -1,4 +1,5 @@
 ﻿@page "/edit-trail/{TrailId:int}"
+@using BlazorTrails.Shared.Features.ManageTrails.EditTrail
 @using BlazorTrails.Shared.Features.ManageTrails.Shared
 @inject IMediator Mediator
 
@@ -6,8 +7,8 @@
 
 <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
-        <li class="breadcrumb-item"<a href="/">Home</a></li>
-        <li class="breadcrumb-item active" arai-current="page">Edit Trail</li>
+        <li class="breadcrumb-item"><a href="/">Home</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Edit Trail</li>
     </ol>
 </nav>
 
@@ -23,55 +24,50 @@ else
     {
         <SuccessAlert Message="Your trail has been edited successfully!" />
     }
-    else if(_errorMessage is not null)
+    else if (_errorMessage is not null)
     {
         <ErrorAlert Message="@_errorMessage" />
     }
+
+    <TrailForm Trail="_trail" OnSubmit="SubmitEditTrail" />
 }
 
-<TrailForm Trail="_trail" OnSubmit="SubmitEditTrail" />
-
-@code{
+@code {
     private bool _isLoading;
     private bool _submitSuccessful;
     private string? _errorMessage;
     private TrailDto _trail = new TrailDto();
 
-    [Parameter]
-    public int TrailId { get; set; }
+    [Parameter] public int TrailId { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
         _isLoading = true;
 
-        var response = await Mediator.Send(new BlazorTrails.Shared.Features.ManageTrails.EditTrail.GetTrailRequest(TrailId));
+        var response = await Mediator.Send(new GetTrailRequest(TrailId));
 
         if (response.Trail is not null)
         {
             _trail.Id = TrailId;
             _trail.Name = response.Trail.Name;
             _trail.Description = response.Trail.Description;
-            _trail.Location = response.Trail.Image;
+            _trail.Location = response.Trail.Location;
+            _trail.Image = response.Trail.Image;
             _trail.Length = response.Trail.Length;
             _trail.TimeInMinutes = response.Trail.TimeInMinutes;
-            _trail.Route.Clear();
-            _trail.Route.AddRange(response.Trail.RouteInstractions.Select(ri => new TrailDto.RouteInstruction
-                {
-                    Stage = ri.Stage,
-                    Description = ri.Description
-                }));
+            _trail.Waypoints.AddRange(response.Trail.Waypoints.Select(wp => new TrailDto.WaypointDto(wp.Latitude, wp.Longitude)));
         }
         else
         {
             _errorMessage = "There was a problem loading the trail.";
-            _isLoading = false;
         }
+
+        _isLoading = false;
     }
 
     private async Task SubmitEditTrail(TrailDto trail, IBrowserFile? image)
     {
-        var response = await Mediator.Send(new BlazorTrails.Shared.Features.ManageTrails.EditTrail.EditTrailRequest(trail));
-
+        var response = await Mediator.Send(new EditTrailRequest(trail));
         if (!response.IsSuccess)
         {
             _submitSuccessful = false;
@@ -81,35 +77,24 @@ else
         {
             _trail.Name = trail.Name;
             _trail.Description = trail.Description;
-            _trail.Location = trail.Image;
+            _trail.Location = trail.Location;
             _trail.Length = trail.Length;
             _trail.TimeInMinutes = trail.TimeInMinutes;
-            _trail.Route.Clear();
-            _trail.Route.AddRange(trail.Route.Select(ri => new TrailDto.RouteInstruction
-                {
-                    Stage = ri.Stage,
-                    Description = ri.Description
-                }));
+            _trail.Waypoints.Clear();
+            _trail.Waypoints.AddRange(trail.Waypoints.Select(wp => new TrailDto.WaypointDto(wp.Latitude, wp.Longitude)));
 
             _submitSuccessful = true;
 
-            if (trail.ImageAct == TrailDto.ImageAction.Add)
-            {
-                _submitSuccessful = await ProcessImage(trail.Id, image!);
-            }
-
-            if (trail.ImageAct == TrailDto.ImageAction.Remove)
-            {
-                _trail.Image = "";
-            }
+            if (trail.ImageAction == ImageAction.Add) _submitSuccessful = await ProcessImage(trail.Id, image!);
+            if (trail.ImageAction == ImageAction.Remove) _trail.Image = "";
         }
 
         StateHasChanged();
     }
 
-    private async Task<bool> ProcessImage(int trailId, IBrowserFile TrailImage)
+    private async Task<bool> ProcessImage(int trailId, IBrowserFile trailImage)
     {
-        var imageUploadResponse = await Mediator.Send(new UploadTrailImageRequest(trailId, TrailImage));
+        var imageUploadResponse = await Mediator.Send(new UploadTrailImageRequest(trailId, trailImage));
 
         if (string.IsNullOrWhiteSpace(imageUploadResponse.ImageName))
         {

@@ -199,3 +199,26 @@ button {
         .input-time div label {
             margin-bottom: 0;
         }
+
+.no-trails {
+    text-align: center;
+    margin-top: 100px;
+}
+
+    .no-trails svg {
+        width: 200px;
+        color: #dee2e6;
+        margin-bottom: 30px;
+    }
+
+.el {
+    display: flex;
+    justify-content: center; 
+    align-items: center; 
+    height: 100vh; 
+}
+
+svg {
+    width: 50px; 
+    height: 50px;
+}

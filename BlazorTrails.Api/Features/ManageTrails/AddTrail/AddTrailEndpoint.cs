@@ -8,11 +8,11 @@ namespace BlazorTrails.Api.Features.ManageTrails.AddTrail;
 
 public class AddTrailEndpoint : EndpointBaseAsync.WithRequest<AddTrailRequest>.WithActionResult<int>
 {
-    private readonly BlazingTrailsContext _context;
+    private readonly BlazingTrailsContext _database;
 
-    public AddTrailEndpoint(BlazingTrailsContext context)
+    public AddTrailEndpoint(BlazingTrailsContext database)
     {
-        _context = context;
+        _database = database;
     }
 
     [HttpPost(AddTrailRequest.RouteTemplate)]
@@ -25,22 +25,15 @@ public class AddTrailEndpoint : EndpointBaseAsync.WithRequest<AddTrailRequest>.W
             Location = request.Trail.Location,
             TimeInMinutes = request.Trail.TimeInMinutes,
             Length = request.Trail.Length,
+            Waypoints = request.Trail.Waypoints.Select(wp => new Waypoint
+            {
+                Latitude = wp.Latitude,
+                Longitude = wp.Longitude
+            }).ToList()
         };
 
-        _context.Trails.Add(trail);
-
-        var routeInstructions = request.Trail.Route
-            .Select(x => new RouteInstruction
-            {
-                Stage = x.Stage,
-                Description = x.Description,
-                Trail = trail
-            });
-
-        _context.RouteInstructions
-            .AddRange(routeInstructions);
-
-        await _context.SaveChangesAsync(cancellationToken);
+        await _database.Trails.AddAsync(trail, cancellationToken);
+        await _database.SaveChangesAsync(cancellationToken);
 
         return Ok(trail.Id);
     }

@@ -10,26 +10,22 @@ public class TrailDto
 
     public string Location { get; set; } = "";
 
+    public string? Image { get; set; }
+
+    public ImageAction ImageAction { get; set; }
+
     public int TimeInMinutes { get; set; }
 
     public int Length { get; set; }
 
-    public string? Image { get; set; }
+    public List<WaypointDto> Waypoints { get; set; } = new List<WaypointDto>();
 
-    public ImageAction ImageAct { get; set; }
+    public record WaypointDto(decimal Latitude, decimal Longitude);
+}
 
-    public List<RouteInstruction> Route { get; set; } = new List<RouteInstruction>();
-
-    public class RouteInstruction
-    {
-        public int Stage { get; set; }
-        public string Description { get; set; } = "";
-    }
-
-    public enum ImageAction
-    {
-        None,
-        Add,
-        Remove
-    }
+public enum ImageAction
+{
+    None,
+    Add,
+    Remove
 }
