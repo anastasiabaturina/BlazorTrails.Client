@@ -1,6 +1,7 @@
 using BlazorTrails.Api.Persistence;
 using FluentValidation.AspNetCore;
 using MediatR;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
@@ -15,6 +16,16 @@ builder.Services.AddControllers()
         fv.RegisterValidatorsFromAssembly(Assembly.Load("BlazorTrails.Shared")));
 
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(typeof(Program).Assembly));
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+}).AddJwtBearer(options =>
+{
+    options.Authority = builder.Configuration["Auth0:Authority"];
+    options.Audience = builder.Configuration["Auth0:ApiIdentifier"];
+});
 
 var app = builder.Build();
 
@@ -36,6 +47,10 @@ app.UseStaticFiles(new StaticFileOptions()
 });
 
 app.UseRouting();
+
+app.UseAuthentication();
+
+app.UseAuthorization();
 
 app.MapControllers();
 
